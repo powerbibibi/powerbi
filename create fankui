@@ -1,0 +1,67 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Aug 23 16:23:13 2021
+
+@author: chairman
+"""
+
+
+import pandas as pd
+import os
+
+
+def get_info_one_class(sheet,reader):
+    data=reader.parse(sheet_name=sheet,header=None)
+    classname=sheet
+    class_feedback_1class=[]
+    for c in range(1,data.shape[1]):
+        classdate=data.loc[0,c]
+        if str(classdate) not in ["nan","NaT"]:
+            classdate=classdate.strftime("%Y-%m-%d")
+            Course_content=data.loc[1,c]
+            homework=data.loc[2,c]
+            if str(Course_content)!="nan":
+                class_participation_all=""
+                count_num=0
+                for r in range(3,data.shape[0]):
+                    stuname=data.loc[r,0]
+                    class_participation=data.loc[r,c]
+                    #print(stuname)
+                    if str(class_participation) not in ["nan","NaT"]:
+                        count_num+=1
+                        class_feedback=classdate+classname[8:10]+"反馈\n"+"主讲内容："+"\n"+Course_content+"\n\n"+stuname+"："+str(class_participation)+"\n\n"+"课后作业："+homework
+                        class_participation_all+=str(count_num)+"、"+stuname+"："+str(class_participation)+"\n"
+                        #print(class_feedback)
+                        class_feedback_1row=[classdate,classname,stuname,class_feedback]
+                        class_feedback_1class.append(class_feedback_1row)
+                #print(len(class_feedback_1class))
+                if count_num:
+                    class_feedback0=classdate+classname[8:10]+"反馈\n"+"主讲内容："+"\n"+Course_content+"\n\n学生具体情况说明：\n"+str(class_participation_all)+"\n"+"课后作业："+homework
+                    class_feedback_1row=[classdate,classname,"班级反馈",class_feedback0]
+                    class_feedback_1class.append(class_feedback_1row)
+    return class_feedback_1class
+
+
+def assemble_all_feedback():
+    xueqi='2023S'
+    a=os.getcwd().split("\\")
+    rootpath=a[0]+"\\"+a[1]+"\\"+r"OA\学生上课情况反馈"+"\\"
+    fpaths=[xueqi+"学生上课情况反馈表.xlsx"]
+    class_feedback_all=[]
+    for a in fpaths:
+        fpath=rootpath+a
+        reader=pd.ExcelFile(fpath)
+        for sheet in reader.sheet_names:
+            print(sheet)
+            if len(sheet)>8:
+                class_feedback_1class=get_info_one_class(sheet,reader)
+                class_feedback_all=class_feedback_all+class_feedback_1class
+        
+    class_feedback_all=pd.DataFrame(class_feedback_all)
+    class_feedback_all.columns=['上课日期','班级名称','学生姓名','上课情况反馈'] 
+    class_feedback_all.to_excel(rootpath+xueqi+"学生上课情况反馈表-汇总.xlsx",index=False)
+    print("\nCongratulations!  "+xueqi+"反馈汇总完毕")
+
+
+if __name__ == '__main__':
+    assemble_all_feedback()
